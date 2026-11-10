@@ -35,32 +35,6 @@ Arhiva rezultată se află în `target/erasmus-demo-0.0.1-SNAPSHOT.jar`. O poți
 java -jar target/erasmus-demo-0.0.1-SNAPSHOT.jar
 ```
 
-## Publicarea proiectului pe GitHub
-
-Acest proiect are **deja un repository Git local și commit-uri**. Nu rula `git init` din nou. Fișierul `.gitignore` exclude rezultatele din `target/`, fișierele locale ale editorului, jurnalele și fișierele locale cu secrete. Fișierele `mvnw`, `mvnw.cmd` și `.mvn/wrapper/maven-wrapper.properties` rămân în Git.
-
-1. Pe GitHub, alege **New repository**, dă-i un nume (de exemplu `erasmus-demo`) și alege vizibilitatea. Creează-l **gol**: nu bifa README, `.gitignore` sau licență. README și `.gitignore` există deja local; poți adăuga o licență mai târziu, dacă dorești.
-2. Din terminalul deschis în directorul proiectului, rulează comenzile de mai jos. Înlocuiește `UTILIZATOR` și `erasmus-demo` cu valorile tale sau copiază adresa HTTPS afișată de GitHub:
-
-```bash
-git status
-git branch -M main
-git remote add origin https://github.com/UTILIZATOR/erasmus-demo.git
-git remote -v
-git push -u origin main
-```
-
-Ramura locală se numește inițial `master`; comanda `git branch -M main` o redenumește înainte de primul push. La autentificarea prin HTTPS, dacă Git cere o parolă, folosește un **personal access token**, nu parola contului; vezi [instrucțiunile GitHub pentru autentificare](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github). Nu scrie tokenul în fișierele proiectului sau în adresa remote.
-
-Pentru modificările ulterioare:
-
-```bash
-git add .
-git commit -m "Describe the change"
-git push
-```
-
-Pașii pentru un repository local existent sunt descriși și în [documentația GitHub](https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github).
 
 ## Selecții demonstrative
 
