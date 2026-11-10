@@ -30,9 +30,10 @@ public class FormOptionsService {
         Long facultyId = input == null ? null : input.facultyId();
         Long programId = input == null ? null : input.programId();
         if (universityId != null && universities.findById(universityId).isEmpty()) throw new InvalidProfileException();
+        if (universityId != null && origins.stream().noneMatch(u -> u.id.equals(universityId))) throw new InvalidProfileException();
         Faculty selectedFaculty = facultyId == null ? null : faculties.findById(facultyId).orElseThrow(InvalidProfileException::new);
         StudyProgram selectedProgram = programId == null ? null : programs.findById(programId).orElseThrow(InvalidProfileException::new);
-        if (universityId == null || origins.stream().noneMatch(u -> u.id.equals(universityId))) {
+        if (universityId == null) {
             facultyId = null; programId = null;
         } else if (selectedFaculty != null && !selectedFaculty.university.id.equals(universityId)) {
             facultyId = null; programId = null;

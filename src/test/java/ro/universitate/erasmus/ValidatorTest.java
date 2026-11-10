@@ -46,6 +46,10 @@ class ValidatorTest {
         b.semester = Semester.SECOND;
         assertViolation("Perioadă greșită");
     }
+    @Test void wrongAcademicYear() {
+        b.academicYear = "2027-2028";
+        assertViolation("Perioadă greșită");
+    }
     @Test void differentCredits() {
         b.ects = 29;
         assertViolation("ECTS diferite");
@@ -61,6 +65,26 @@ class ValidatorTest {
     @Test void duplicateCourseUse() {
         when(equivalences.findByAgreementId(1L)).thenReturn(List.of(pair(a,b), pair(a,b)));
         assertViolation("folosit de două ori");
+    }
+    @Test void duplicateCourseCode() {
+        Course duplicate = course(home, 3L, 30);
+        duplicate.code = a.code;
+        when(courses.findAll()).thenReturn(List.of(a, b, duplicate));
+        assertViolation("Cod de curs duplicat");
+    }
+    @Test void duplicateAgreement() {
+        ExchangeAgreement duplicate = new ExchangeAgreement(home, host, "2026-2027", Semester.FIRST, true);
+        duplicate.id = 2L;
+        when(agreements.findAll()).thenReturn(List.of(agreement, duplicate));
+        assertViolation("Parteneriat duplicat");
+    }
+    @Test void reportsSeveralViolationsTogether() {
+        destination.id = origin.id;
+        b.ects = 29;
+        assertThatThrownBy(validator::validate).isInstanceOf(DataIntegrityException.class)
+            .hasMessageContaining("Universitatea gazdă coincide")
+            .hasMessageContaining("ECTS diferite")
+            .hasMessageContaining("Curriculum cu 29 ECTS");
     }
     private void assertViolation(String fragment) {
         assertThatThrownBy(validator::validate).isInstanceOf(DataIntegrityException.class).hasMessageContaining(fragment);

@@ -18,6 +18,8 @@ class DemoOracleTest {
     @Autowired UniversityRepository universities;
     @Autowired FacultyRepository faculties;
     @Autowired StudyProgramRepository programs;
+    @Autowired ExchangeAgreementRepository agreements;
+    @Autowired CourseEquivalenceRepository equivalences;
 
     @Test void profileA() {
         var results = service.recommend(profile("Universitatea Dunărea Nouă", "Informatică", Semester.FIRST));
@@ -34,6 +36,12 @@ class DemoOracleTest {
         var comparison = service.compare(results.profile(), results.recommendations().get(1).agreementId());
         assertThat(comparison.uncovered()).isEqualTo(8);
         assertThat(comparison.rows().stream().filter(r -> !r.covered()).mapToInt(r -> r.homeEcts()).sum()).isEqualTo(8);
+        assertThat(comparison.rows().stream().filter(r -> !r.covered()).map(r -> r.homeCourse()).toList())
+            .containsExactly("Proiectare software", "Dezvoltare web");
+        var inactive = agreements.findAll().stream().filter(a -> !a.active && a.homeProgram.id.equals(results.profile().programId())
+            && a.semester == Semester.FIRST).findFirst().orElseThrow();
+        assertThat(inactive.hostProgram.faculty.university.name).isEqualTo("Universitatea Iberică");
+        assertThat(equivalences.findByAgreementId(inactive.id)).hasSize(6);
     }
 
     @Test void profileB() {
@@ -58,6 +66,12 @@ class DemoOracleTest {
                     assertThat(found).anyMatch(r -> r.status().equals("COMPLETĂ"));
                     assertThat(found).anyMatch(r -> r.status().equals("PARȚIALĂ"));
                 }
+    }
+    @Test void otherSemesterAgreementDoesNotEnterProfileA() {
+        var second = service.recommend(profile("Universitatea Dunărea Nouă", "Informatică", Semester.SECOND));
+        assertThat(second.recommendations()).anyMatch(r -> r.university().equals("Universitatea Iberică"));
+        var first = service.recommend(profile("Universitatea Dunărea Nouă", "Informatică", Semester.FIRST));
+        assertThat(first.recommendations()).noneMatch(r -> r.university().equals("Universitatea Iberică"));
     }
     private ProfileRequest profile(String universityName, String facultyName, Semester semester) {
         University u = universities.findAll().stream().filter(x -> x.name.equals(universityName)).findFirst().orElseThrow();

@@ -2,7 +2,6 @@ package ro.universitate.erasmus.service;
 
 import java.math.*;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +43,11 @@ public class RecommendationService {
         if (candidates.isEmpty()) throw new NoDestinationsException();
         List<Recommendation> results = new ArrayList<>();
         for (ExchangeAgreement agreement : candidates) {
+            if (agreement.homeProgram == null || agreement.hostProgram == null ||
+                !agreement.active || !Objects.equals(agreement.homeProgram.id, home.id) ||
+                !Objects.equals(agreement.academicYear, profile.academicYear()) ||
+                agreement.semester != profile.semester())
+                throw new DataIntegrityException("Parteneriat inconsistent: " + agreement.id);
             Map<Long, CourseEquivalence> matched = validMatches(agreement, curriculum);
             int covered = curriculum.stream().filter(c -> matched.containsKey(c.id)).mapToInt(c -> c.ects).sum();
             BigDecimal percentage = BigDecimal.valueOf(covered).multiply(BigDecimal.valueOf(100))
@@ -87,8 +91,10 @@ public class RecommendationService {
         StudyProgram program = programs.findById(p.programId()).orElseThrow(InvalidProfileException::new);
         if (!Objects.equals(faculty.university.id, university.id) ||
             !Objects.equals(program.faculty.id, faculty.id) || program.level != StudyProgram.Level.BACHELOR ||
+            universities.findOriginUniversities().stream().noneMatch(u -> Objects.equals(u.id, university.id)) ||
             !courses.existsByStudyYear(p.studyYear()) ||
-            !courses.existsByAcademicYearAndSemester(p.academicYear(), p.semester()))
+            !courses.existsByAcademicYearAndSemester(p.academicYear(), p.semester()) ||
+            !courses.existsByProgramIdAndAcademicYearAndSemester(p.programId(), p.academicYear(), p.semester()))
             throw new InvalidProfileException();
         return program;
     }
@@ -102,6 +108,8 @@ public class RecommendationService {
 
     private Map<Long, CourseEquivalence> validMatches(ExchangeAgreement agreement, List<Course> curriculum) {
         if (agreement.homeProgram == null || agreement.hostProgram == null ||
+            agreement.homeProgram.faculty == null || agreement.hostProgram.faculty == null ||
+            agreement.homeProgram.faculty.university == null || agreement.hostProgram.faculty.university == null ||
             Objects.equals(agreement.homeProgram.faculty.university.id, agreement.hostProgram.faculty.university.id))
             throw new DataIntegrityException("Universitate gazdă invalidă");
         Set<Long> curriculumIds = curriculum.stream().map(c -> c.id).collect(Collectors.toSet());
@@ -109,6 +117,9 @@ public class RecommendationService {
         Map<Long, CourseEquivalence> matched = new HashMap<>();
         for (CourseEquivalence e : equivalences.findByAgreementId(agreement.id)) {
             if (e.homeCourse == null || e.hostCourse == null ||
+                e.homeCourse.program == null || e.hostCourse.program == null ||
+                e.homeCourse.id == null || e.hostCourse.id == null ||
+                e.justification == null || e.justification.isBlank() ||
                 !Objects.equals(e.homeCourse.program.id, agreement.homeProgram.id) ||
                 !Objects.equals(e.hostCourse.program.id, agreement.hostProgram.id) ||
                 !Objects.equals(e.homeCourse.academicYear, agreement.academicYear) ||

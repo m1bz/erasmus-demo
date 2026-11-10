@@ -96,11 +96,32 @@ public class DemoDataLoader implements ApplicationRunner {
         ExchangeAgreement agreement = save(new ExchangeAgreement(home, host, YEAR, semester, active));
         for (int index : indices) {
             Course origin = homeCourses[index], destination = hostCourses[index];
-            String reason = "Conținutul despre " + origin.name.toLowerCase(Locale.ROOT) +
-                " și proiectul aplicat de la „" + destination.name + "” acoperă aceleași competențe și " +
-                origin.ects + " credite ECTS.";
+            String reason = "Ambele discipline evaluează " +
+                topic(origin.code.startsWith("INF"), semester, index) +
+                " prin aplicații comparabile de " + origin.ects + " ECTS.";
             save(new CourseEquivalence(agreement, origin, destination, reason));
         }
+    }
+
+    private static String topic(boolean informatics, Semester semester, int index) {
+        String[] topics;
+        if (informatics && semester == Semester.FIRST) topics = new String[]{
+            "analiza complexității și implementarea arborilor", "modelarea relațională și interogările SQL",
+            "protocoalele TCP/IP și configurarea rețelelor", "testarea și arhitectura aplicațiilor",
+            "estimarea statistică și intervalele de încredere", "construcția interfețelor web accesibile"};
+        else if (informatics) topics = new String[]{
+            "gestionarea proceselor și a memoriei", "sincronizarea firelor de execuție",
+            "criptografia și controlul accesului", "prelucrarea seturilor de date",
+            "aproximarea numerică și analiza erorilor", "evaluarea utilizabilității interfețelor"};
+        else if (semester == Semester.FIRST) topics = new String[]{
+            "cererea, oferta și echilibrul pieței", "costurile și bugetarea managerială",
+            "regresia și testarea ipotezelor economice", "segmentarea pieței și strategia de produs",
+            "evaluarea investițiilor și costul capitalului", "contractele și obligațiile comerciale"};
+        else topics = new String[]{
+            "modelele creșterii și politicile monetare", "indicatorii de lichiditate și rentabilitate",
+            "evaluarea impactului politicilor publice", "planificarea capacității și fluxurilor operaționale",
+            "balanța comercială și cursul de schimb", "modelarea unui plan de afaceri"};
+        return topics[index];
     }
 
     private static int[] all(int n) {
@@ -113,8 +134,8 @@ public class DemoDataLoader implements ApplicationRunner {
     }
     private static String[] names(int program, int semester, boolean host) {
         if (program == 0 && semester == 0) return host
-            ? new String[]{"Algoritmi avansați", "Sisteme de date", "Rețele de calculatoare", "Inginerie software",
-                           "Probabilități aplicate", "Interfețe web"}
+            ? new String[]{"Algoritmi avansați", "Sisteme de date", "Rețele de calculatoare", "Proiectare de software",
+                           "Probabilități aplicate", "Dezvoltare de aplicații web"}
             : new String[]{"Algoritmi și structuri de date", "Baze de date", "Rețele informatice", "Proiectare software",
                            "Statistică aplicată", "Dezvoltare web"};
         if (program == 0) return host

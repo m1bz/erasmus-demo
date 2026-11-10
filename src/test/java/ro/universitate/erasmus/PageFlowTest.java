@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import jakarta.servlet.RequestDispatcher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,5 +66,9 @@ class PageFlowTest {
 
     @Test void unknownRouteHasNotFoundStatus() throws Exception {
         mvc.perform(get("/ruta-inexistenta")).andExpect(status().isNotFound());
+        mvc.perform(get("/error").requestAttr(RequestDispatcher.ERROR_STATUS_CODE, 404))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(containsString("Pagina cerută nu există.")))
+            .andExpect(content().string(containsString("Date fictive")));
     }
 }

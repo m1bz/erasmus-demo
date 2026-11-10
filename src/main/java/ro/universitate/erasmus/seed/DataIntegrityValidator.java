@@ -20,20 +20,30 @@ public class DataIntegrityValidator {
     public void validate() {
         List<String> errors = new ArrayList<>();
         Map<String, Integer> totals = new HashMap<>();
+        Set<String> courseKeys = new HashSet<>();
         for (Course c : courses.findAll()) {
             if (c.program == null || c.academicYear == null || c.semester == null || c.ects <= 0)
                 errors.add("Curs invalid: " + c.id);
-            else totals.merge(c.program.id + "/" + c.studyYear + "/" + c.academicYear + "/" + c.semester,
-                              c.ects, Integer::sum);
+            else {
+                String courseKey = c.program.id + "/" + c.academicYear + "/" + c.code;
+                if (!courseKeys.add(courseKey)) errors.add("Cod de curs duplicat: " + courseKey);
+                totals.merge(c.program.id + "/" + c.studyYear + "/" + c.academicYear + "/" + c.semester,
+                             c.ects, Integer::sum);
+            }
         }
         totals.forEach((key, total) -> {
             if (total != 30) errors.add("Curriculum cu " + total + " ECTS: " + key);
         });
+        Set<String> agreementKeys = new HashSet<>();
         for (ExchangeAgreement a : agreements.findAll()) {
             if (a.homeProgram == null || a.hostProgram == null || a.academicYear == null || a.semester == null)
                 errors.add("Parteneriat incomplet: " + a.id);
-            else if (Objects.equals(a.homeProgram.faculty.university.id, a.hostProgram.faculty.university.id))
-                errors.add("Universitatea gazdă coincide cu cea de origine: " + a.id);
+            else {
+                String key = a.homeProgram.id + "/" + a.hostProgram.id + "/" + a.academicYear + "/" + a.semester;
+                if (!agreementKeys.add(key)) errors.add("Parteneriat duplicat: " + key);
+                if (Objects.equals(a.homeProgram.faculty.university.id, a.hostProgram.faculty.university.id))
+                    errors.add("Universitatea gazdă coincide cu cea de origine: " + a.id);
+            }
             Set<Long> homeIds = new HashSet<>();
             Set<Long> hostIds = new HashSet<>();
             for (CourseEquivalence e : equivalences.findByAgreementId(a.id)) {

@@ -28,12 +28,14 @@ class RecommendationServiceTest {
 
     @BeforeEach void prepare() {
         when(universities.findById(1L)).thenReturn(Optional.of(homeUniversity));
+        when(universities.findOriginUniversities()).thenReturn(List.of(homeUniversity));
         when(faculties.findById(2L)).thenReturn(Optional.of(faculty));
         when(programs.findById(3L)).thenReturn(Optional.of(home));
         when(courses.findByProgramIdAndStudyYearAndAcademicYearAndSemesterOrderByCode(
             3L, 2, "2026-2027", Semester.FIRST)).thenReturn(List.of(first, second));
         when(courses.existsByStudyYear(2)).thenReturn(true);
         when(courses.existsByAcademicYearAndSemester("2026-2027", Semester.FIRST)).thenReturn(true);
+        when(courses.existsByProgramIdAndAcademicYearAndSemester(3L, "2026-2027", Semester.FIRST)).thenReturn(true);
     }
     @Test void completePartialAndZeroAreSorted() {
         ExchangeAgreement complete = agreement(1L, "Alpină", Semester.FIRST, true);
@@ -74,6 +76,13 @@ class RecommendationServiceTest {
         assertThatThrownBy(() -> service.recommend(profile)).isInstanceOf(DataIntegrityException.class);
         Course shifted = course(98L, home, 20, Semester.SECOND);
         map(a, pair(a, shifted, hostCourse(a, 20)));
+        assertThatThrownBy(() -> service.recommend(profile)).isInstanceOf(DataIntegrityException.class);
+    }
+    @Test void missingCourseReferenceIsCorruption() {
+        ExchangeAgreement a = agreement(1L, "Alpină", Semester.FIRST, true);
+        when(agreements.findByHomeProgramIdAndAcademicYearAndSemesterAndActiveTrue(3L, "2026-2027", Semester.FIRST))
+            .thenReturn(List.of(a));
+        map(a, pair(a, first, null));
         assertThatThrownBy(() -> service.recommend(profile)).isInstanceOf(DataIntegrityException.class);
     }
     @Test void noCurriculumAndNoDestinationsAreDistinct() {

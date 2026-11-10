@@ -1,0 +1,16 @@
+{
+  "projectVersion": "0.0.1-SNAPSHOT",
+  "completedMilestones": ["M1", "M2", "M3", "M4"],
+  "currentMilestone": null,
+  "lastVerifiedCommand": "./mvnw clean verify",
+  "lastVerifiedResult": "BUILD SUCCESS; 35 tests, 0 failures, 0 errors",
+  "mutationChecks": {
+    "inactiveFilter": "2 test errors detected",
+    "doubleCredit": "3 test failures detected",
+    "roundedStatus": "1 test failure detected"
+  },
+  "httpChecks": "GET /, A, B, comparison: 200; invalid profile: 400; unknown route: HTML 404",
+  "readmeStartCheck": "./mvnw spring-boot:run started on port 8080; GET / returned 200",
+  "browserCheck": "Chrome headless at 390px: form to results to comparison, selection reset, table scroll, zero console errors",
+  "remaining": []
+}

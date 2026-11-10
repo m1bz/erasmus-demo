@@ -15,12 +15,14 @@ import ro.universitate.erasmus.seed.DataIntegrityValidator;
 class SeedTest {
     @Autowired UniversityRepository universities;
     @Autowired StudyProgramRepository programs;
+    @Autowired FacultyRepository faculties;
     @Autowired CourseRepository courses;
     @Autowired ExchangeAgreementRepository agreements;
     @Autowired DataIntegrityValidator validator;
 
     @Test void fixedStructureAndCurricula() {
         assertThat(universities.count()).isEqualTo(6);
+        assertThat(faculties.count()).isEqualTo(12);
         assertThat(programs.count()).isEqualTo(12);
         for (StudyProgram p : programs.findAll()) for (Semester term : Semester.values()) {
             List<Course> list = courses.findByProgramIdAndStudyYearAndAcademicYearAndSemesterOrderByCode(
