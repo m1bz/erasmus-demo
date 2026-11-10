@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparație cursuri</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+  <header><h1>Comparație cursuri</h1><p th:text="${comparison.recommendation.university + ' · ' + comparison.recommendation.program}"></p></header>
+  <div class="banner">Date fictive; recomandări demonstrative, nu aprobări Erasmus oficiale</div>
+  <p><a th:href="@{/recomandari(universityId=${profile.universityId},facultyId=${profile.facultyId},programId=${profile.programId},studyYear=${profile.studyYear},academicYear=${profile.academicYear},semester=${profile.semester})}">← Înapoi la rezultate</a></p>
+  <section class="card"><h2>Acoperire</h2>
+    <p><strong th:text="${comparison.recommendation.covered + '/' + comparison.recommendation.total + ' ECTS acoperite'}"></strong>
+      · <span th:text="${comparison.uncovered + ' ECTS neacoperite'}"></span></p>
+  </section>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Materie de acasă</th><th>ECTS</th><th>Echivalent gazdă</th><th>ECTS</th><th>Justificare</th></tr></thead>
+    <tbody><tr th:each="row : ${comparison.rows}" th:classappend="${row.covered ? '' : 'uncovered'}">
+      <td th:text="${row.homeCourse}"></td><td th:text="${row.homeEcts}"></td>
+      <td th:text="${row.hostCourse}"></td><td th:text="${row.hostEcts == null ? '—' : row.hostEcts}"></td>
+      <td th:text="${row.justification}"></td>
+    </tr></tbody>
+  </table></div>
+</main></body></html>

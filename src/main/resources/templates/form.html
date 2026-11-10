@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Destinații Erasmus demonstrative</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+  <header><h1>Destinații Erasmus</h1><p>Explorează parteneriatele și echivalările declarate pentru programul tău.</p></header>
+  <div class="banner">Date fictive; recomandări demonstrative, nu aprobări Erasmus oficiale</div>
+  <div th:if="${message}" class="alert" role="alert" th:text="${message}"></div>
+  <section class="card">
+    <h2>Profilul studentului</h2>
+    <form action="/" method="get" id="profile-form">
+      <div class="grid">
+        <div><label for="universityId">Universitate de origine</label>
+          <select id="universityId" name="universityId" required onchange="refreshForm()">
+            <option value="">Alege universitatea</option>
+            <option th:each="item : ${form.universities}" th:value="${item.id}" th:text="${item.name}"
+                    th:selected="${item.id == form.universityId}"></option>
+          </select></div>
+        <div><label for="facultyId">Facultate</label>
+          <select id="facultyId" name="facultyId" required onchange="refreshForm()">
+            <option value="">Alege facultatea</option>
+            <option th:each="item : ${form.faculties}" th:value="${item.id}" th:text="${item.name}"
+                    th:selected="${item.id == form.facultyId}"></option>
+          </select></div>
+        <div><label for="programId">Program de licență</label>
+          <select id="programId" name="programId" required onchange="refreshForm()">
+            <option value="">Alege programul</option>
+            <option th:each="item : ${form.programs}" th:value="${item.id}" th:text="${item.name}"
+                    th:selected="${item.id == form.programId}"></option>
+          </select></div>
+        <div><label for="studyYear">An de studiu</label>
+          <select id="studyYear" name="studyYear" required onchange="refreshForm()">
+            <option value="">Alege anul</option>
+            <option th:each="item : ${form.studyYears}" th:value="${item}" th:text="${item}"
+                    th:selected="${item == form.studyYear}"></option>
+          </select></div>
+        <div><label for="academicYear">An academic</label>
+          <select id="academicYear" name="academicYear" required onchange="refreshForm()">
+            <option value="">Alege anul academic</option>
+            <option th:each="item : ${form.academicYears}" th:value="${item}" th:text="${item}"
+                    th:selected="${item == form.academicYear}"></option>
+          </select></div>
+        <div><label for="semester">Semestru</label>
+          <select id="semester" name="semester" required>
+            <option value="">Alege semestrul</option>
+            <option th:each="item : ${form.semesters}" th:value="${item}" th:text="${item.label}"
+                    th:selected="${item == form.semester}"></option>
+          </select></div>
+      </div>
+      <div class="actions"><noscript><button type="submit" formaction="/">Actualizează listele</button></noscript>
+        <button type="submit" formaction="/recomandari">Caută</button></div>
+    </form>
+  </section>
+</main><script>function refreshForm(){const form=document.getElementById('profile-form');form.action='/';form.submit();}</script></body>
+</html>

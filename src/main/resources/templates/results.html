@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recomandări Erasmus</title><link rel="stylesheet" href="/style.css"></head>
+<body><main>
+  <header><h1>Recomandări Erasmus</h1><p>Destinațiile sunt ordonate după creditele ECTS acoperite.</p></header>
+  <div class="banner">Date fictive; recomandări demonstrative, nu aprobări Erasmus oficiale</div>
+  <p><a th:href="@{/(universityId=${profile.universityId},facultyId=${profile.facultyId},programId=${profile.programId},studyYear=${profile.studyYear},academicYear=${profile.academicYear},semester=${profile.semester})}">← Modifică profilul</a></p>
+  <div class="result-list">
+    <article class="card result" th:each="item : ${recommendations}">
+      <h2 th:text="${item.university}"></h2>
+      <p th:text="${item.faculty + ' · ' + item.program + ' · ' + item.city + ', ' + item.country}"></p>
+      <p><strong th:text="${item.covered + '/' + item.total + ' ECTS'}"></strong>
+        <span th:text="${#numbers.formatDecimal(item.percentage, 1, 1, 'COMMA') + '%'}"></span></p>
+      <p class="status" th:text="${item.status}"></p>
+      <a class="button" th:href="@{/comparatie(universityId=${profile.universityId},facultyId=${profile.facultyId},programId=${profile.programId},studyYear=${profile.studyYear},academicYear=${profile.academicYear},semester=${profile.semester},agreementId=${item.agreementId})}">Compară materiile</a>
+    </article>
+  </div>
+</main></body></html>

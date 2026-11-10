@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eroare</title><link rel="stylesheet" href="/style.css"></head>
+<body><main><header><h1>Nu am putut afișa pagina</h1></header>
+  <div class="banner">Date fictive; recomandări demonstrative, nu aprobări Erasmus oficiale</div>
+  <div class="alert" role="alert" th:text="${message != null ? message : 'Pagina cerută nu există sau a apărut o eroare.'}"></div>
+  <p><a href="/">Înapoi la formular</a></p>
+</main></body></html>
