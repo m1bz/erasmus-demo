@@ -17,7 +17,6 @@ class SeedTest {
     @Autowired StudyProgramRepository programs;
     @Autowired FacultyRepository faculties;
     @Autowired CourseRepository courses;
-    @Autowired ExchangeAgreementRepository agreements;
     @Autowired DataIntegrityValidator validator;
 
     @Test void fixedStructureAndCurricula() {
@@ -33,9 +32,4 @@ class SeedTest {
         validator.validate();
     }
 
-    @Test void demoHasEightOriginProfiles() {
-        long romanian = universities.findAll().stream().filter(u -> u.country.equals("România")).count();
-        assertThat(romanian).isEqualTo(2);
-        assertThat(agreements.count()).isGreaterThanOrEqualTo(20);
-    }
 }

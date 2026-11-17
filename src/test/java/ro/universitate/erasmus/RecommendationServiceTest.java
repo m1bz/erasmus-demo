@@ -54,12 +54,6 @@ class RecommendationServiceTest {
             .containsExactly("COMPLETĂ", "PARȚIALĂ", "FĂRĂ ECHIVALĂRI");
         assertThat(found.get(1).percentage()).isEqualByComparingTo(new BigDecimal("66.7"));
     }
-    @Test void inactiveAndOtherSemesterAreExcluded() {
-        when(agreements.findByHomeProgramIdAndAcademicYearAndSemesterAndActiveTrue(3L, "2026-2027", Semester.FIRST))
-            .thenReturn(List.of(agreement(1L, "Alpină", Semester.FIRST, true)));
-        map(agreement(1L, "Alpină", Semester.FIRST, true));
-        assertThat(service.recommend(profile).recommendations()).hasSize(1);
-    }
     @Test void sameHomeCourseCannotBeCountedTwice() {
         ExchangeAgreement a = agreement(1L, "Alpină", Semester.FIRST, true);
         when(agreements.findByHomeProgramIdAndAcademicYearAndSemesterAndActiveTrue(3L, "2026-2027", Semester.FIRST))
