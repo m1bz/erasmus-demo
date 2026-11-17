@@ -35,6 +35,35 @@ Arhiva rezultată se află în `target/erasmus-demo-0.0.1-SNAPSHOT.jar`. O poți
 java -jar target/erasmus-demo-0.0.1-SNAPSHOT.jar
 ```
 
+## API JSON și HTTPS local
+
+Aplicația oferă și un API JSON pentru aceleași date demonstrative:
+
+* `GET /api/v1/health` verifică dacă serviciul răspunde.
+* `GET /api/v1/options` returnează universitățile, facultățile, programele și perioadele disponibile.
+* `GET /api/v1/recommendations` calculează recomandările. Parametrii necesari sunt `universityId`, `facultyId`, `programId`, `studyYear`, `academicYear` și `semester`.
+* `GET /api/v1/recommendations/{agreementId}/comparison` returnează comparația cursurilor pentru destinația aleasă și aceiași parametri de profil.
+* `POST /api/v1/agreements` creează un parteneriat dintr-un corp JSON cu programele, anul academic, semestrul și starea activă.
+* `POST /api/v1/equivalences` creează o echivalare JSON pentru un parteneriat și două cursuri.
+
+Exemplu pentru profilul demonstrativ A:
+
+```text
+http://localhost:8080/api/v1/recommendations?universityId=1&facultyId=1&programId=1&studyYear=2&academicYear=2026-2027&semester=FIRST
+```
+
+Răspunsurile folosesc DTO-uri JSON independente de entitățile JPA. Datele invalide primesc HTTP 400, profilurile fără curriculum sau destinații primesc HTTP 404, iar datele incoerente primesc HTTP 500 cu un mesaj JSON în limba română.
+
+Operațiile POST validează referințele și regulile de domeniu, apoi salvează în H2. La creare răspund cu HTTP 201 și un antet `Location`; referințele inexistente primesc HTTP 404, iar duplicatele sau conflictele de perioadă/ECTS primesc HTTP 409.
+
+Pentru pornire locală prin HTTPS:
+
+```bash
+./scripts/run-local-https.sh
+```
+
+Scriptul creează certificatul local `dev-keystore.p12` și pornește aplicația la **https://localhost:8443**. Certificatul este autosemnat și va produce un avertisment în browser; este destinat numai dezvoltării locale. Poți furniza propriul fișier folosind `EMP_KEYSTORE_PATH` și parola sa prin `EMP_KEYSTORE_PASSWORD`.
+
 
 ## Selecții demonstrative
 

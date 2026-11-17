@@ -6,4 +6,6 @@ import ro.universitate.erasmus.entity.Semester;
 public interface ExchangeAgreementRepository extends JpaRepository<ExchangeAgreement, Long> {
     List<ExchangeAgreement> findByHomeProgramIdAndAcademicYearAndSemesterAndActiveTrue(
         Long homeProgramId, String academicYear, Semester semester);
+    boolean existsByHomeProgramIdAndHostProgramIdAndAcademicYearAndSemester(
+        Long homeProgramId, Long hostProgramId, String academicYear, Semester semester);
 }

@@ -11,6 +11,7 @@
 # Local runtime data and secrets
 /data/
 **/data/
+/dev-keystore.p12
 .env
 .env.*
 !.env.example
