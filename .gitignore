@@ -1,20 +1,23 @@
-# Build output
+# Maven build output
 /target/
-/build/
+**/target/
+
+# Generated classes, archives, and logs
 *.class
+*.jar
+*.war
 *.log
 
-# Maven Wrapper download cache; keep mvnw and wrapper properties tracked
-.mvn/wrapper/maven-wrapper.jar
-
-# Local settings and secrets
+# Local runtime data and secrets
+/data/
+**/data/
 .env
 .env.*
 !.env.example
 /src/main/resources/application-local.properties
 /src/main/resources/application-secrets.properties
 
-# IDE files
+# IDE and editor files
 .idea/
 *.iml
 *.iws
@@ -29,10 +32,13 @@
 .sts4-cache/
 /nbproject/private/
 /nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
 
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Course reference documents and standalone sprint sample projects.
+# The runnable Erasmus demo is the root Maven project and src/ tree.
+/*.pdf
+/msd.t2_c4.spring_domain/
+/msd.t2_c5.springboot_data/
