@@ -3,7 +3,7 @@
   "completedMilestones": ["M1", "M2", "M3", "M4"],
   "currentMilestone": null,
   "lastVerifiedCommand": "./mvnw clean verify",
-  "lastVerifiedResult": "BUILD SUCCESS; 38 tests, 0 failures, 0 errors",
+  "lastVerifiedResult": "BUILD SUCCESS; 24 tests, 0 failures, 0 errors",
   "mutationChecks": {
     "inactiveFilter": "2 test errors detected",
     "doubleCredit": "3 test failures detected",
