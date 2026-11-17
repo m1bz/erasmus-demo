@@ -7,11 +7,15 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 import ro.universitate.erasmus.dto.ProfileRequest;
-import ro.universitate.erasmus.entity.Semester;
+import ro.universitate.erasmus.entity.Course;
 import ro.universitate.erasmus.entity.CourseEquivalence;
 import ro.universitate.erasmus.entity.ExchangeAgreement;
+import ro.universitate.erasmus.entity.Faculty;
+import ro.universitate.erasmus.entity.Semester;
 import ro.universitate.erasmus.service.FormOptionsService;
 import ro.universitate.erasmus.service.RecommendationService;
+import ro.universitate.erasmus.entity.StudyProgram;
+import ro.universitate.erasmus.entity.University;
 
 public final class ApiDtos {
     private ApiDtos() {}
@@ -36,11 +40,41 @@ public final class ApiDtos {
         }
     }
 
+    public record CoursesQuery(@NotNull @Positive Long programId, String academicYear,
+                               Semester semester, @Positive Integer studyYear) {}
+
+    public record ProgramsQuery(Long universityId, Long facultyId) {}
+
+    public record AgreementsQuery(Long homeProgramId, String academicYear, Semester semester) {}
+
+    public record EquivalencesQuery(@NotNull @Positive Long agreementId) {}
+
     public record HealthResponse(String status, String service) {}
     public record UniversityOption(Long id, String name, String city, String country) {}
     public record FacultyOption(Long id, String name, Long universityId) {}
     public record ProgramOption(Long id, String name, Long facultyId, String level) {}
     public record SemesterOption(String value, String label) {}
+    public record UniversityResponse(Long id, String name, String city, String country) {
+        public static UniversityResponse from(University university) {
+            return new UniversityResponse(university.id, university.name, university.city, university.country);
+        }
+    }
+    public record ProgramResponse(Long id, String name, Long facultyId, String faculty,
+                                  Long universityId, String university, String level) {
+        public static ProgramResponse from(StudyProgram program) {
+            Faculty faculty = program.faculty;
+            University university = faculty.university;
+            return new ProgramResponse(program.id, program.name, faculty.id, faculty.name,
+                university.id, university.name, program.level.name());
+        }
+    }
+    public record CourseResponse(Long id, String code, String name, int ects, Long programId,
+                                 String program, int studyYear, String academicYear, Semester semester) {
+        public static CourseResponse from(Course course) {
+            return new CourseResponse(course.id, course.code, course.name, course.ects, course.program.id,
+                course.program.name, course.studyYear, course.academicYear, course.semester);
+        }
+    }
     public record OptionsResponse(List<UniversityOption> universities, List<FacultyOption> faculties,
                                   List<ProgramOption> programs, List<Integer> studyYears,
                                   List<String> academicYears, List<SemesterOption> semesters,
@@ -95,6 +129,11 @@ public final class ApiDtos {
     public record CreateAgreementRequest(@NotNull Long homeProgramId, @NotNull Long hostProgramId,
                                          @NotBlank String academicYear, @NotNull Semester semester,
                                          @NotNull Boolean active) {}
+
+    public record AgreementStatusRequest(@NotNull Boolean active) {}
+
+    public record UpdateEquivalenceRequest(@NotNull Long agreementId, @NotNull Long homeCourseId, @NotNull Long hostCourseId,
+                                           @NotBlank @Size(max = 700) String justification) {}
 
     public record AgreementResponse(Long id, Long homeProgramId, String homeProgram,
                                     Long hostProgramId, String hostProgram, String academicYear,

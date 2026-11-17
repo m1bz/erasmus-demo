@@ -1,85 +1,109 @@
 # Recomandări Erasmus demonstrative
 
-Aplicație universitară cu date fictive. Recomandările arată numai echivalări declarate în baza de date și **nu reprezintă aprobări Erasmus oficiale**.
+Aplicație Java pentru explorarea echivalărilor dintre cursuri și calcularea acoperirii ECTS la o universitate parteneră. Datele sunt fictive; rezultatele nu sunt aprobări Erasmus oficiale și nu reprezintă o Learning Agreement individuală.
 
 ## Pornire pas cu pas
 
-Ai nevoie de **Java 21** și de internet la prima rulare, pentru descărcarea Maven Wrapper și a dependențelor. Nu trebuie să instalezi Maven separat.
+Ai nevoie de **Java 21** și de internet la prima rulare, pentru descărcarea dependențelor. Maven nu trebuie instalat separat.
 
-1. Deschide un terminal în directorul proiectului, acolo unde se află `pom.xml`.
-2. Verifică versiunea Java:
+1. Deschide un terminal în directorul proiectului, lângă `pom.xml`.
+2. Verifică Java:
 
-```bash
-java -version
-```
+   ```bash
+   java -version
+   ```
 
 3. Pornește aplicația:
 
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   Pe Windows: `mvnw.cmd spring-boot:run`.
+4. Când apare mesajul `Started ErasmusDemoApplication`, deschide [http://localhost:8080/](http://localhost:8080/). Oprește aplicația cu `Ctrl+C`.
+
+Profilul implicit folosește H2 în memorie. Datele și schimbările făcute prin API se resetează când oprești aplicația. Consola H2 este la [http://localhost:8080/h2-console](http://localhost:8080/h2-console), cu URL `jdbc:h2:mem:erasmus`, utilizatorul `sa` și parola goală.
+
+### Păstrează schimbările local
+
+Pentru a salva datele într-un fișier local H2, pornește aplicația cu profilul `persistent`:
+
 ```bash
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=demo,persistent ./mvnw spring-boot:run
 ```
 
-Pe Windows, folosește `mvnw.cmd spring-boot:run`. Când apare mesajul `Started ErasmusDemoApplication`, deschide **http://localhost:8080/**. Oprește aplicația cu `Ctrl+C` în terminal.
+Fișierul bazei de date apare în `data/erasmus`. La prima pornire se încarcă seed-ul demonstrativ; pornirile următoare păstrează schimbările. Profilul persistent folosește `ddl-auto=update`, pe când profilul implicit recreează schema și datele demo la fiecare pornire. Directoarele `data/` sunt excluse din Git.
 
-Baza H2 funcționează în memorie și se reconstruiește la fiecare repornire. În profilul implicit `demo`, consola H2 este la **http://localhost:8080/h2-console**, cu URL JDBC `jdbc:h2:mem:erasmus`, utilizator `sa` și parolă goală.
-
-Pentru a rula testele și a construi arhiva aplicației:
+Pentru a rula testele și a construi aplicația:
 
 ```bash
 ./mvnw clean verify
 ```
 
-Arhiva rezultată se află în `target/erasmus-demo-0.0.1-SNAPSHOT.jar`. O poți porni și direct cu:
+Arhiva este `target/erasmus-demo-0.0.1-SNAPSHOT.jar` și poate fi pornită cu `java -jar target/erasmus-demo-0.0.1-SNAPSHOT.jar`.
 
-```bash
-java -jar target/erasmus-demo-0.0.1-SNAPSHOT.jar
-```
+## API JSON
 
-## API JSON și HTTPS local
+Endpoint-urile JSON sunt sub `/api/v1`; exemplele complete și ordonate sunt în colecția Postman [`docs/erasmus-demo.postman_collection.json`](docs/erasmus-demo.postman_collection.json).
 
-Aplicația oferă și un API JSON pentru aceleași date demonstrative:
+| Metodă și adresă | Scop |
+|---|---|
+| `GET /health` | Verifică dacă aplicația răspunde. |
+| `GET /universities` | Listează universitățile și ID-urile lor. |
+| `GET /programs?universityId=...` | Listează programele unei universități. |
+| `GET /courses?programId=...` | Listează cursurile unui program; filtrele `academicYear`, `semester` și `studyYear` sunt opționale. |
+| `GET /agreements?homeProgramId=...&academicYear=...&semester=...` | Caută parteneriatele de ieșire. |
+| `GET /agreements/{id}` | Citește un parteneriat. |
+| `POST /agreements` | Creează un parteneriat. |
+| `PATCH /agreements/{id}/status` | Activează sau dezactivează un parteneriat. |
+| `GET /equivalences?agreementId=...` | Listează echivalările parteneriatului. |
+| `GET /equivalences/{id}` | Citește o echivalare. |
+| `POST /equivalences` | Adaugă o echivalare. |
+| `PUT /equivalences/{id}` | Actualizează o echivalare existentă. |
+| `GET /options?...` | Returnează opțiunile disponibile pentru formular. |
+| `GET /recommendations?...` | Calculează acoperirea ECTS pentru profilul selectat. |
+| `GET /recommendations/{agreementId}/comparison?...` | Compară disciplina de origine cu cea gazdă. |
 
-* `GET /api/v1/health` verifică dacă serviciul răspunde.
-* `GET /api/v1/options` returnează universitățile, facultățile, programele și perioadele disponibile.
-* `GET /api/v1/recommendations` calculează recomandările. Parametrii necesari sunt `universityId`, `facultyId`, `programId`, `studyYear`, `academicYear` și `semester`.
-* `GET /api/v1/recommendations/{agreementId}/comparison` returnează comparația cursurilor pentru destinația aleasă și aceiași parametri de profil.
-* `POST /api/v1/agreements` creează un parteneriat dintr-un corp JSON cu programele, anul academic, semestrul și starea activă.
-* `POST /api/v1/equivalences` creează o echivalare JSON pentru un parteneriat și două cursuri.
+ID-urile se obțin din răspunsurile de catalog; nu trebuie memorate. Toate operațiile de scriere validează referințele și regulile de domeniu. Crearea răspunde cu `201 Created`; datele invalide răspund cu `400`, referințele lipsă cu `404`, iar conflictele de domeniu cu `409`. Erorile API includ un mesaj în limba română.
 
-Exemplu pentru profilul demonstrativ A:
+### Exemplu de flux: adaugă echivalări și recalculează
 
-```text
-http://localhost:8080/api/v1/recommendations?universityId=1&facultyId=1&programId=1&studyYear=2&academicYear=2026-2027&semester=FIRST
-```
+Profilul **A** este Universitatea Dunărea Nouă → Informatică → anul 2 → 2026–2027 → semestrul 1. Pentru Universitatea Baltică, seed-ul acoperă inițial **22 din 30 ECTS**. API-ul poate adăuga echivalarea de 5 ECTS pentru `INF1-4`, recalculând acoperirea la **27/30**; apoi echivalarea de 3 ECTS pentru `INF1-6` o duce la **30/30**.
 
-Răspunsurile folosesc DTO-uri JSON independente de entitățile JPA. Datele invalide primesc HTTP 400, profilurile fără curriculum sau destinații primesc HTTP 404, iar datele incoerente primesc HTTP 500 cu un mesaj JSON în limba română.
+Colecția Postman descoperă universitățile, programele, cursurile și parteneriatul după nume/cod, apoi rulează acest flux. În Postman, apasă **Import**, alege [`docs/erasmus-demo.postman_collection.json`](docs/erasmus-demo.postman_collection.json), apoi rulează toate cele 12 cereri în ordine. Rulează colecția o singură dată pe o bază proaspătă: după creare, API-ul corect respinge duplicatele cu `409 Conflict`. Profilul demo implicit se resetează la repornire; profilul persistent păstrează echivalările adăugate. Pentru scrieri manuale, folosește răspunsurile `GET` pentru a completa ID-urile.
 
-Operațiile POST validează referințele și regulile de domeniu, apoi salvează în H2. La creare răspund cu HTTP 201 și un antet `Location`; referințele inexistente primesc HTTP 404, iar duplicatele sau conflictele de perioadă/ECTS primesc HTTP 409.
+Pentru `POST /agreements`, trimite `homeProgramId`, `hostProgramId`, `academicYear`, `semester` (`FIRST` sau `SECOND`) și `active`. Pentru `POST /equivalences`, trimite `agreementId`, `homeCourseId`, `hostCourseId` și `justification`. Folosește ID-urile obținute din catalog sau din colecția Postman. Cursurile trebuie să aparțină programelor și perioadei parteneriatului și să aibă același număr de ECTS; fiecare curs poate apărea o singură dată în echivalările parteneriatului.
 
-Pentru pornire locală prin HTTPS:
+## HTTPS local
+
+Pornește varianta HTTPS cu:
 
 ```bash
 ./scripts/run-local-https.sh
 ```
 
-Scriptul creează certificatul local `dev-keystore.p12` și pornește aplicația la **https://localhost:8443**. Certificatul este autosemnat și va produce un avertisment în browser; este destinat numai dezvoltării locale. Poți furniza propriul fișier folosind `EMP_KEYSTORE_PATH` și parola sa prin `EMP_KEYSTORE_PASSWORD`.
+Aceasta ascultă la [https://localhost:8443](https://localhost:8443) cu un certificat autosemnat generat local; browserul va afișa un avertisment. Datele rămân în memorie și se resetează implicit. Pentru a păstra datele și în varianta HTTPS:
 
+```bash
+EMP_DATA_PROFILE=persistent ./scripts/run-local-https.sh
+```
 
-## Selecții demonstrative
+Poți indica propriul keystore prin `EMP_KEYSTORE_PATH` și parola prin `EMP_KEYSTORE_PASSWORD`. HTTPS-ul oferit este pentru dezvoltare locală, nu pentru expunere publică.
 
-Toate selecțiile folosesc anul de studiu **2** și anul academic **2026-2027**.
+Pentru a folosi API-ul HTTPS din Postman cu certificatul autosemnat, setează variabila `baseUrl` a colecției la `https://localhost:8443` și dezactivează **Settings → General → SSL certificate verification** în Postman. Repornește verificarea certificatelor când revii la servicii HTTPS publice.
 
-| Profil | Selecție | Rezultate, în ordine |
+## Date demonstrative
+
+Fiecare selecție de curriculum însumează 30 ECTS. Profilurile originale de anul 2 sunt păstrate pentru anul academic 2026–2027; profilul de Informatică are în plus anul 3, semestrul 1, pentru 2027–2028.
+
+| Profil | Selecție | Destinații și acoperire |
 |---|---|---|
-| A | Universitatea Dunărea Nouă → Informatică → Informatică → Semestrul 1 | Universitatea Alpină 30/30 (100,0%, COMPLETĂ); Universitatea Baltică 22/30 (73,3%, PARȚIALĂ); Universitatea Centrală 0/30 (0,0%, FĂRĂ ECHIVALĂRI). Universitatea Iberică lipsește deoarece parteneriatul este inactiv. |
-| B | Universitatea Carpaților → Economie → Economie → Semestrul 2 | Universitatea Alpină 30/30 (100,0%, COMPLETĂ); Universitatea Baltică 26/30 (86,7%, PARȚIALĂ); Universitatea Centrală 26/30 (86,7%, PARȚIALĂ); Universitatea Iberică 17/30 (56,7%, PARȚIALĂ). |
+| A | Dunărea Nouă → Informatică, anul 2, semestrul 1 | Alpină 30/30; Baltică 22/30; Centrală 0/30. Iberică este inactivă și nu apare. |
+| B | Carpaților → Economie, anul 2, semestrul 2 | Alpină 30/30; Baltică 26/30; Centrală 26/30; Iberică 17/30. |
+| C | Dunărea Nouă → Informatică, anul 3, semestrul 1 | Alpină 30/30; Baltică 22/30; Centrală 0/30. Iberică este inactivă și nu apare. |
 
-## Reguli și limite
+Rezultatele sunt ordonate după acoperire, apoi alfabetic. Sunt numărate doar parteneriatele active pentru aceeași perioadă și echivalările 1:1 cu ECTS egale. Profilurile sunt demonstrative și nu verifică admiterea, locurile disponibile, orarul, acreditarea instituțională sau aprobările Erasmus.
 
-Curriculumul cuprinde cursurile programului, anului de studiu, anului academic și semestrului selectat. Fiecare curriculum demo are 30 ECTS. Se iau în calcul numai parteneriatele active pentru aceeași perioadă și numai echivalările 1:1 declarate, cu ECTS egale. O echivalare din alt an de studiu nu contribuie la acoperire; o echivalare cu program, perioadă sau credite incoerente produce eroare de integritate. Procentul este rotunjit la o zecimală, iar statutul se calculează din creditele întregi. La egalitate, destinațiile sunt ordonate alfabetic.
+## Cerințe și scope
 
-Formularul afișează doar opțiuni prezente în date și resetează selecțiile dependente când se schimbă universitatea, facultatea sau programul. Adresele rezultatelor și comparației conțin întreg profilul și pot fi redeschise fără sesiune.
-
-Simplificare aleasă: universitățile de origine din formular sunt cele cu cel puțin un parteneriat activ; profilurile demo acoperă numai licența, anul 2, un semestru din 2026–2027.
-
-Aplicația nu verifică admiterea, locurile disponibile, orarul sau aprobările instituționale.
+Proiectul păstrează un model simplu pentru recomandări de cursuri: universitate, facultate, program, curs, parteneriat și echivalare. Matricea [`docs/cerinte-curs.md`](docs/cerinte-curs.md) arată ce acoperă sprinturile de domeniu/persistență și ce rămâne o alegere de interfață ori de extindere. Aplicația nu implementează fluxul complet al unei Learning Agreement student, nominalizarea sau aprobarea instituțională.

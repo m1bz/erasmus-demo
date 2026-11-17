@@ -61,6 +61,48 @@ public class CatalogWriteService {
         Course host = courses.findById(request.hostCourseId())
             .orElseThrow(() -> new ApiNotFoundException("Cursul gazdă nu există."));
 
+        validateEquivalence(agreement, home, host);
+        if (equivalences.existsByAgreementIdAndHomeCourseId(agreement.id, home.id) ||
+            equivalences.existsByAgreementIdAndHostCourseId(agreement.id, host.id)) {
+            throw new ApiConflictException("Fiecare curs poate apărea o singură dată în echivalările parteneriatului.");
+        }
+
+        return equivalences.saveAndFlush(new CourseEquivalence(agreement, home, host, request.justification().trim()));
+    }
+
+    @Transactional
+    public ExchangeAgreement setAgreementActive(Long agreementId, boolean active) {
+        ExchangeAgreement agreement = agreements.findById(agreementId)
+            .orElseThrow(() -> new ApiNotFoundException("Parteneriatul nu există."));
+        agreement.active = active;
+        return agreements.saveAndFlush(agreement);
+    }
+
+    @Transactional
+    public CourseEquivalence updateEquivalence(Long equivalenceId, Long requestAgreementId,
+                                               Long homeCourseId, Long hostCourseId, String justification) {
+        CourseEquivalence equivalence = equivalences.findById(equivalenceId)
+            .orElseThrow(() -> new ApiNotFoundException("Echivalarea nu există."));
+        if (!Objects.equals(equivalence.agreement.id, requestAgreementId)) {
+            throw new ApiConflictException("Parteneriatul echivalării nu poate fi schimbat.");
+        }
+        Course home = courses.findById(homeCourseId)
+            .orElseThrow(() -> new ApiNotFoundException("Cursul de origine nu există."));
+        Course host = courses.findById(hostCourseId)
+            .orElseThrow(() -> new ApiNotFoundException("Cursul gazdă nu există."));
+        ExchangeAgreement agreement = equivalence.agreement;
+        validateEquivalence(agreement, home, host);
+        if (equivalences.existsByAgreementIdAndHomeCourseIdAndIdNot(agreement.id, home.id, equivalence.id) ||
+            equivalences.existsByAgreementIdAndHostCourseIdAndIdNot(agreement.id, host.id, equivalence.id)) {
+            throw new ApiConflictException("Fiecare curs poate apărea o singură dată în echivalările parteneriatului.");
+        }
+        equivalence.homeCourse = home;
+        equivalence.hostCourse = host;
+        equivalence.justification = justification.trim();
+        return equivalences.saveAndFlush(equivalence);
+    }
+
+    private void validateEquivalence(ExchangeAgreement agreement, Course home, Course host) {
         if (!Objects.equals(home.program.id, agreement.homeProgram.id) ||
             !Objects.equals(host.program.id, agreement.hostProgram.id)) {
             throw new ApiConflictException("Cursurile trebuie să aparțină programelor din parteneriat.");
@@ -73,11 +115,5 @@ public class CatalogWriteService {
         if (home.ects != host.ects) {
             throw new ApiConflictException("Cursurile echivalate trebuie să aibă același număr de ECTS.");
         }
-        if (equivalences.existsByAgreementIdAndHomeCourseId(agreement.id, home.id) ||
-            equivalences.existsByAgreementIdAndHostCourseId(agreement.id, host.id)) {
-            throw new ApiConflictException("Fiecare curs poate apărea o singură dată în echivalările parteneriatului.");
-        }
-
-        return equivalences.saveAndFlush(new CourseEquivalence(agreement, home, host, request.justification().trim()));
     }
 }

@@ -4,6 +4,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 keystore_path="${EMP_KEYSTORE_PATH:-$project_root/dev-keystore.p12}"
 keystore_password="${EMP_KEYSTORE_PASSWORD:-changeit}"
+data_profile="${EMP_DATA_PROFILE:-demo}"
 
 if [[ ! -f "$keystore_path" ]]; then
     mkdir -p "$(dirname "$keystore_path")"
@@ -15,6 +16,11 @@ fi
 
 export EMP_KEYSTORE="file:$keystore_path"
 export EMP_KEYSTORE_PASSWORD="$keystore_password"
-export SPRING_PROFILES_ACTIVE="demo,https"
+case "$data_profile" in
+    demo) export SPRING_PROFILES_ACTIVE="demo,https" ;;
+    persistent) export SPRING_PROFILES_ACTIVE="demo,persistent,https" ;;
+    *) echo "EMP_DATA_PROFILE trebuie să fie demo sau persistent." >&2; exit 2 ;;
+esac
 
+cd "$project_root"
 exec "$project_root/mvnw" -f "$project_root/pom.xml" spring-boot:run

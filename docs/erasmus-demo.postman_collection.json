@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Recomandări Erasmus demonstrative",
+    "description": "Flux ghidat: descoperă datele demo A, apoi adaugă două echivalări și verifică acoperirea 22 → 27 → 30 ECTS.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "homeUniversityName", "value": "Universitatea Dunărea Nouă" },
+    { "key": "hostUniversityName", "value": "Universitatea Baltică" },
+    { "key": "homeProgramName", "value": "Informatică" },
+    { "key": "hostProgramName", "value": "Informatică" },
+    { "key": "academicYear", "value": "2026-2027" },
+    { "key": "studyYear", "value": "2" },
+    { "key": "semester", "value": "FIRST" }
+  ],
+  "item": [
+    {
+      "name": "1. Descoperă universitatea de origine",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/universities" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const match = rows.find(x => x.name === pm.collectionVariables.get('homeUniversityName'));",
+        "pm.test('Universitatea de origine există', () => pm.expect(match).to.exist);",
+        "if (match) pm.collectionVariables.set('homeUniversityId', match.id);"
+      ] } }]
+    },
+    {
+      "name": "2. Descoperă universitatea gazdă",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/universities" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const match = rows.find(x => x.name === pm.collectionVariables.get('hostUniversityName'));",
+        "pm.test('Universitatea gazdă există', () => pm.expect(match).to.exist);",
+        "if (match) pm.collectionVariables.set('hostUniversityId', match.id);"
+      ] } }]
+    },
+    {
+      "name": "3. Găsește programul de origine",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/programs?universityId={{homeUniversityId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const match = rows.find(x => x.name === pm.collectionVariables.get('homeProgramName'));",
+        "pm.test('Programul de origine există', () => pm.expect(match).to.exist);",
+        "if (match) { pm.collectionVariables.set('homeProgramId', match.id); pm.collectionVariables.set('homeFacultyId', match.facultyId); }"
+      ] } }]
+    },
+    {
+      "name": "4. Găsește programul gazdă",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/programs?universityId={{hostUniversityId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const match = rows.find(x => x.name === pm.collectionVariables.get('hostProgramName'));",
+        "pm.test('Programul gazdă există', () => pm.expect(match).to.exist);",
+        "if (match) pm.collectionVariables.set('hostProgramId', match.id);"
+      ] } }]
+    },
+    {
+      "name": "5. Găsește cursurile de origine",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/courses?programId={{homeProgramId}}&academicYear={{academicYear}}&semester={{semester}}&studyYear={{studyYear}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const first = rows.find(x => x.code === 'INF1-4');",
+        "const second = rows.find(x => x.code === 'INF1-6');",
+        "pm.test('Cursurile demo INF1-4 și INF1-6 există', () => { pm.expect(first).to.exist; pm.expect(second).to.exist; });",
+        "if (first && second) { pm.collectionVariables.set('homeCourse5Id', first.id); pm.collectionVariables.set('homeCourse3Id', second.id); }"
+      ] } }]
+    },
+    {
+      "name": "6. Găsește cursurile gazdă",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/courses?programId={{hostProgramId}}&academicYear={{academicYear}}&semester={{semester}}&studyYear={{studyYear}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const first = rows.find(x => x.code === 'INF1-4');",
+        "const second = rows.find(x => x.code === 'INF1-6');",
+        "pm.test('Cursurile gazdă INF1-4 și INF1-6 există', () => { pm.expect(first).to.exist; pm.expect(second).to.exist; });",
+        "if (first && second) { pm.collectionVariables.set('hostCourse5Id', first.id); pm.collectionVariables.set('hostCourse3Id', second.id); }"
+      ] } }]
+    },
+    {
+      "name": "7. Găsește parteneriatul activ cu Baltica",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/agreements?homeProgramId={{homeProgramId}}&academicYear={{academicYear}}&semester={{semester}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const rows = pm.response.json();",
+        "const hostId = Number(pm.collectionVariables.get('hostProgramId'));",
+        "const match = rows.find(x => x.hostProgramId === hostId && x.active);",
+        "pm.test('Parteneriatul activ există', () => pm.expect(match).to.exist);",
+        "if (match) pm.collectionVariables.set('agreementId', match.id);"
+      ] } }]
+    },
+    {
+      "name": "8. Acoperire înainte de modificare (22 ECTS)",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/recommendations?universityId={{homeUniversityId}}&facultyId={{homeFacultyId}}&programId={{homeProgramId}}&studyYear={{studyYear}}&academicYear={{academicYear}}&semester={{semester}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const row = pm.response.json().recommendations.find(x => x.university === pm.collectionVariables.get('hostUniversityName'));",
+        "pm.test('Baltica acoperă inițial 22 din 30 ECTS', () => { pm.expect(row).to.exist; if (row) pm.expect(row.coveredEcts).to.eql(22); });"
+      ] } }]
+    },
+    {
+      "name": "9. Adaugă echivalarea de 5 ECTS",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"agreementId\": {{agreementId}},\n  \"homeCourseId\": {{homeCourse5Id}},\n  \"hostCourseId\": {{hostCourse5Id}},\n  \"justification\": \"Comparație demonstrativă a rezultatelor învățării pentru cursurile de proiectare software, 5 ECTS.\"\n}" }, "url": "{{baseUrl}}/api/v1/equivalences" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Echivalarea a fost creată', () => pm.response.to.have.status(201));"
+      ] } }]
+    },
+    {
+      "name": "10. Acoperire după prima echivalare (27 ECTS)",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/recommendations?universityId={{homeUniversityId}}&facultyId={{homeFacultyId}}&programId={{homeProgramId}}&studyYear={{studyYear}}&academicYear={{academicYear}}&semester={{semester}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const row = pm.response.json().recommendations.find(x => x.university === pm.collectionVariables.get('hostUniversityName'));",
+        "pm.test('Baltica ajunge la 27 din 30 ECTS', () => { pm.expect(row).to.exist; if (row) pm.expect(row.coveredEcts).to.eql(27); });"
+      ] } }]
+    },
+    {
+      "name": "11. Adaugă echivalarea de 3 ECTS",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"agreementId\": {{agreementId}},\n  \"homeCourseId\": {{homeCourse3Id}},\n  \"hostCourseId\": {{hostCourse3Id}},\n  \"justification\": \"Comparație demonstrativă a rezultatelor învățării pentru cursurile de interfețe utilizator, 3 ECTS.\"\n}" }, "url": "{{baseUrl}}/api/v1/equivalences" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('A doua echivalare a fost creată', () => pm.response.to.have.status(201));"
+      ] } }]
+    },
+    {
+      "name": "12. Acoperire după a doua echivalare (30 ECTS)",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/v1/recommendations?universityId={{homeUniversityId}}&facultyId={{homeFacultyId}}&programId={{homeProgramId}}&studyYear={{studyYear}}&academicYear={{academicYear}}&semester={{semester}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const row = pm.response.json().recommendations.find(x => x.university === pm.collectionVariables.get('hostUniversityName'));",
+        "pm.test('Baltica ajunge la 30 din 30 ECTS', () => { pm.expect(row).to.exist; if (row) pm.expect(row.coveredEcts).to.eql(30); });"
+      ] } }]
+    }
+  ]
+}

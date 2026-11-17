@@ -12,13 +12,11 @@ import ro.universitate.erasmus.repository.*;
 import ro.universitate.erasmus.service.*;
 
 class RecommendationServiceTest {
-    UniversityRepository universities = mock(UniversityRepository.class);
-    FacultyRepository faculties = mock(FacultyRepository.class);
     StudyProgramRepository programs = mock(StudyProgramRepository.class);
     CourseRepository courses = mock(CourseRepository.class);
     ExchangeAgreementRepository agreements = mock(ExchangeAgreementRepository.class);
     CourseEquivalenceRepository equivalences = mock(CourseEquivalenceRepository.class);
-    RecommendationService service = new RecommendationService(universities, faculties, programs, courses, agreements, equivalences);
+    RecommendationService service = new RecommendationService(programs, courses, agreements, equivalences);
     University homeUniversity = university(1L, "Origine");
     Faculty faculty = faculty(2L, homeUniversity);
     StudyProgram home = program(3L, faculty, "Informatică");
@@ -27,15 +25,9 @@ class RecommendationServiceTest {
     ProfileRequest profile = new ProfileRequest(1L, 2L, 3L, 2, "2026-2027", Semester.FIRST);
 
     @BeforeEach void prepare() {
-        when(universities.findById(1L)).thenReturn(Optional.of(homeUniversity));
-        when(universities.findOriginUniversities()).thenReturn(List.of(homeUniversity));
-        when(faculties.findById(2L)).thenReturn(Optional.of(faculty));
         when(programs.findById(3L)).thenReturn(Optional.of(home));
         when(courses.findByProgramIdAndStudyYearAndAcademicYearAndSemesterOrderByCode(
             3L, 2, "2026-2027", Semester.FIRST)).thenReturn(List.of(first, second));
-        when(courses.existsByStudyYear(2)).thenReturn(true);
-        when(courses.existsByAcademicYearAndSemester("2026-2027", Semester.FIRST)).thenReturn(true);
-        when(courses.existsByProgramIdAndAcademicYearAndSemester(3L, "2026-2027", Semester.FIRST)).thenReturn(true);
     }
     @Test void completePartialAndZeroAreSorted() {
         ExchangeAgreement complete = agreement(1L, "Alpină", Semester.FIRST, true);
@@ -90,8 +82,6 @@ class RecommendationServiceTest {
     @Test void manipulatedRelationshipsAreRejected() {
         ProfileRequest wrong = new ProfileRequest(999L, 2L, 3L, 2, "2026-2027", Semester.FIRST);
         assertThatThrownBy(() -> service.recommend(wrong)).isInstanceOf(InvalidProfileException.class);
-        Faculty other = faculty(4L, university(5L, "Alta"));
-        when(faculties.findById(4L)).thenReturn(Optional.of(other));
         assertThatThrownBy(() -> service.recommend(new ProfileRequest(1L, 4L, 3L, 2, "2026-2027", Semester.FIRST)))
             .isInstanceOf(InvalidProfileException.class);
     }

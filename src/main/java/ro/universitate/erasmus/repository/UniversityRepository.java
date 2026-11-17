@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import ro.universitate.erasmus.entity.University;
 public interface UniversityRepository extends JpaRepository<University, Long> {
+    List<University> findAllByOrderByNameAsc();
+
     @Query("select distinct a.homeProgram.faculty.university from ExchangeAgreement a where a.active = true")
     List<University> findOriginUniversities();
 }

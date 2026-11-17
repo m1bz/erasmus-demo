@@ -11,17 +11,14 @@ import ro.universitate.erasmus.repository.*;
 
 @Service
 public class RecommendationService {
-    private final UniversityRepository universities;
-    private final FacultyRepository faculties;
     private final StudyProgramRepository programs;
     private final CourseRepository courses;
     private final ExchangeAgreementRepository agreements;
     private final CourseEquivalenceRepository equivalences;
 
-    public RecommendationService(UniversityRepository universities, FacultyRepository faculties,
-                                 StudyProgramRepository programs, CourseRepository courses,
+    public RecommendationService(StudyProgramRepository programs, CourseRepository courses,
                                  ExchangeAgreementRepository agreements, CourseEquivalenceRepository equivalences) {
-        this.universities = universities; this.faculties = faculties; this.programs = programs;
+        this.programs = programs;
         this.courses = courses; this.agreements = agreements; this.equivalences = equivalences;
     }
 
@@ -32,16 +29,23 @@ public class RecommendationService {
     public record ComparisonRow(String homeCourse, int homeEcts, String hostCourse, Integer hostEcts,
                                 String justification, boolean covered) {}
     public record Comparison(Recommendation recommendation, List<ComparisonRow> rows, int uncovered) {}
+    private record Candidate(Recommendation recommendation, Map<Long, CourseEquivalence> matches) {}
+    private record Calculation(List<Course> curriculum, List<Candidate> candidates) {}
 
     @Transactional(readOnly = true)
     public Results recommend(ProfileRequest profile) {
+        Calculation calculation = calculate(profile);
+        return new Results(profile, calculation.candidates().stream().map(Candidate::recommendation).toList());
+    }
+
+    private Calculation calculate(ProfileRequest profile) {
         StudyProgram home = validate(profile);
         List<Course> curriculum = curriculum(profile);
         int total = curriculum.stream().mapToInt(c -> c.ects).sum();
         List<ExchangeAgreement> candidates = agreements.findByHomeProgramIdAndAcademicYearAndSemesterAndActiveTrue(
             home.id, profile.academicYear(), profile.semester());
         if (candidates.isEmpty()) throw new NoDestinationsException();
-        List<Recommendation> results = new ArrayList<>();
+        List<Candidate> results = new ArrayList<>();
         for (ExchangeAgreement agreement : candidates) {
             if (agreement.homeProgram == null || agreement.hostProgram == null ||
                 !agreement.active || !Objects.equals(agreement.homeProgram.id, home.id) ||
@@ -55,30 +59,28 @@ public class RecommendationService {
             String status = covered == total ? "COMPLETĂ" : covered == 0 ? "FĂRĂ ECHIVALĂRI" : "PARȚIALĂ";
             StudyProgram host = agreement.hostProgram;
             University university = host.faculty.university;
-            results.add(new Recommendation(agreement.id, university.name, host.faculty.name, host.name,
-                university.country, university.city, covered, total, percentage, status));
+            results.add(new Candidate(new Recommendation(agreement.id, university.name, host.faculty.name, host.name,
+                university.country, university.city, covered, total, percentage, status), matched));
         }
-        results.sort(Comparator.comparingInt(Recommendation::covered).reversed()
-            .thenComparing(Recommendation::university, String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(Recommendation::program, String.CASE_INSENSITIVE_ORDER));
-        return new Results(profile, List.copyOf(results));
+        results.sort(Comparator.comparingInt((Candidate c) -> c.recommendation().covered()).reversed()
+            .thenComparing(c -> c.recommendation().university(), String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(c -> c.recommendation().program(), String.CASE_INSENSITIVE_ORDER));
+        return new Calculation(curriculum, List.copyOf(results));
     }
 
     @Transactional(readOnly = true)
     public Comparison compare(ProfileRequest profile, Long agreementId) {
-        Results results = recommend(profile);
-        Recommendation selected = results.recommendations().stream()
-            .filter(r -> Objects.equals(r.agreementId(), agreementId)).findFirst()
+        Calculation calculation = calculate(profile);
+        Candidate selectedCandidate = calculation.candidates().stream()
+            .filter(c -> Objects.equals(c.recommendation().agreementId(), agreementId)).findFirst()
             .orElseThrow(InvalidProfileException::new);
-        ExchangeAgreement agreement = agreements.findById(agreementId).orElseThrow(InvalidProfileException::new);
-        List<Course> curriculum = curriculum(profile);
-        Map<Long, CourseEquivalence> matched = validMatches(agreement, curriculum);
-        List<ComparisonRow> rows = curriculum.stream().map(c -> {
-            CourseEquivalence e = matched.get(c.id);
+        List<ComparisonRow> rows = calculation.curriculum().stream().map(c -> {
+            CourseEquivalence e = selectedCandidate.matches().get(c.id);
             return e == null
                 ? new ComparisonRow(c.name, c.ects, "Neacoperită", null, "Nu există echivalare declarată.", false)
                 : new ComparisonRow(c.name, c.ects, e.hostCourse.name, e.hostCourse.ects, e.justification, true);
         }).toList();
+        Recommendation selected = selectedCandidate.recommendation();
         return new Comparison(selected, rows, selected.total() - selected.covered());
     }
 
@@ -86,15 +88,11 @@ public class RecommendationService {
         if (p == null || p.universityId() == null || p.facultyId() == null || p.programId() == null ||
             p.studyYear() == null || p.studyYear() <= 0 || p.academicYear() == null || p.academicYear().isBlank() ||
             p.semester() == null) throw new InvalidProfileException();
-        University university = universities.findById(p.universityId()).orElseThrow(InvalidProfileException::new);
-        Faculty faculty = faculties.findById(p.facultyId()).orElseThrow(InvalidProfileException::new);
         StudyProgram program = programs.findById(p.programId()).orElseThrow(InvalidProfileException::new);
-        if (!Objects.equals(faculty.university.id, university.id) ||
-            !Objects.equals(program.faculty.id, faculty.id) || program.level != StudyProgram.Level.BACHELOR ||
-            universities.findOriginUniversities().stream().noneMatch(u -> Objects.equals(u.id, university.id)) ||
-            !courses.existsByStudyYear(p.studyYear()) ||
-            !courses.existsByAcademicYearAndSemester(p.academicYear(), p.semester()) ||
-            !courses.existsByProgramIdAndAcademicYearAndSemester(p.programId(), p.academicYear(), p.semester()))
+        if (program.faculty == null || program.faculty.university == null ||
+            !Objects.equals(program.faculty.id, p.facultyId()) ||
+            !Objects.equals(program.faculty.university.id, p.universityId()) ||
+            program.level != StudyProgram.Level.BACHELOR)
             throw new InvalidProfileException();
         return program;
     }

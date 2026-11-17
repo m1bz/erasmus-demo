@@ -41,13 +41,15 @@ public class FormOptionsService {
         List<Faculty> facultyOptions = universityId == null ? List.of() : faculties.findByUniversityIdOrderByName(universityId);
         if (facultyId == null || selectedProgram != null && !selectedProgram.faculty.id.equals(facultyId)) programId = null;
         List<StudyProgram> programOptions = facultyId == null ? List.of() : programs.findByFacultyIdOrderByName(facultyId);
-        Long finalProgramId = programId;
-        List<Course> existing = finalProgramId == null ? List.of() : courses.findAll().stream()
-            .filter(c -> c.program.id.equals(finalProgramId)).toList();
+        List<Course> existing = programId == null ? List.of() : courses.findCatalogCourses(programId, null, null, null);
+        Integer requestedStudyYear = input == null ? null : input.studyYear();
+        String requestedAcademicYear = input == null ? null : input.academicYear();
         List<Integer> studyYears = existing.stream().map(c -> c.studyYear).distinct().sorted().toList();
-        List<String> academicYears = existing.stream().map(c -> c.academicYear).distinct().sorted().toList();
-        Integer studyYear = input == null || !studyYears.contains(input.studyYear()) ? null : input.studyYear();
-        String academicYear = input == null || !academicYears.contains(input.academicYear()) ? null : input.academicYear();
+        Integer studyYear = studyYears.contains(requestedStudyYear) ? requestedStudyYear : null;
+        List<String> academicYears = existing.stream()
+            .filter(c -> studyYear == null || c.studyYear == studyYear)
+            .map(c -> c.academicYear).distinct().sorted().toList();
+        String academicYear = academicYears.contains(requestedAcademicYear) ? requestedAcademicYear : null;
         List<Semester> semesters = existing.stream().filter(c -> Objects.equals(c.studyYear, studyYear)
                 && Objects.equals(c.academicYear, academicYear))
             .map(c -> c.semester).distinct().sorted().toList();

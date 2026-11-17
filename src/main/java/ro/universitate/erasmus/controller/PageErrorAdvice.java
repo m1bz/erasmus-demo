@@ -8,7 +8,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.ModelAndView;
 import ro.universitate.erasmus.service.*;
 
-@ControllerAdvice
+@ControllerAdvice(assignableTypes = RecommendationController.class)
 public class PageErrorAdvice {
     private final FormOptionsService forms;
     public PageErrorAdvice(FormOptionsService forms) { this.forms = forms; }

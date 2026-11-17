@@ -1,9 +1,16 @@
 {
   "projectVersion": "0.0.1-SNAPSHOT",
-  "completedMilestones": ["M1", "M2", "M3", "M4"],
+  "completedMilestones": ["M1", "M2", "M3", "M4", "M5"],
   "currentMilestone": null,
   "lastVerifiedCommand": "./mvnw clean verify",
-  "lastVerifiedResult": "BUILD SUCCESS; 24 tests, 0 failures, 0 errors",
+  "lastVerifiedResult": "BUILD SUCCESS; 22 tests, 0 failures, 0 errors",
+  "reviewVerification": {
+    "postmanCollection": "12 requests replayed against local HTTPS; coverage 22 -> 27 -> 30 ECTS",
+    "businessFlow": "Activation, deactivation, mapping correction and rejected correction preserving the previous mapping verified",
+    "apiErrors": "400, 404, 405, 415 returned JSON; browser 404 remained HTML",
+    "persistentRestart": "Coverage 30/30 and 6 mappings preserved; seed remained at 174 courses, 12 programs, 25 agreements",
+    "courseCompliance": "Partial; remaining rubric differences documented in docs/cerinte-curs.md"
+  },
   "mutationChecks": {
     "inactiveFilter": "2 test errors detected",
     "doubleCredit": "3 test failures detected",

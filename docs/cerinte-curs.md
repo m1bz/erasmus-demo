@@ -1,0 +1,17 @@
+# Potrivirea cu cerințele cursului
+
+Acest tabel rezumă PDF-urile de sprint păstrate în directorul proiectului. El descrie demonstrația din acest repository, nu toate capabilitățile cursului și nici specificația mai amplă din `erasmus-mobility-platform`.
+
+| Sursă | Cerință explicită | Acoperire în aplicație |
+|---|---|---|
+| `Scop_lab1.pdf`, p. 1 | Prezentarea aplicației, cinci user stories, diagramă use-case, diagramă UML de clase și diagramă SQL cu tabele și chei. | Acestea sunt artefacte de proiectare și prezentare. README-ul rezumă scopul, iar modelele Java/JPA și schema generată concretizează entitățile și relațiile; un set complet de diagrame și cinci user stories nu este livrat de aplicație. |
+| `Sprint.2.Domain-Implementation.Requirements.pdf`, pp. 2–5 | Entități și agregate, obiecte valoare/enumerări, reguli de validare, servicii de workflow și calcul, configurare Spring și teste pentru servicii. p. 5 mai cere interfețe și implementări pentru servicii suport/factories și servicii de workflow, validare, calcul și audit. | Modelul are universitate, facultate, program, curs, parteneriat și echivalare; `Semester` este enum. Serviciile calculează acoperirea și aplică reguli de perioadă, program, credite și unicitate. Testele unitare verifică reguli de domeniu, opțiuni și recomandări; demonstrația nu implementează perechea interfață/implementare pentru fiecare serviciu, factories de agregate sau un serviciu de audit dedicat. Este deci o potrivire parțială cu lista completă de livrabile Sprint 2. |
+| `Sprint.3.Persistence-Implementation.Requirements.pdf`, pp. 2–6 | Entități JPA și relații; Spring Data `JpaRepository`; operații de căutare; teste de repository și servicii. p. 6 cere teste noi pentru servicii repository JPA și actualizarea testelor de business service. | Entitățile sunt persistate cu JPA, repository-urile extind Spring Data JPA, iar H2 oferă date demo reproductibile sau o opțiune locală persistentă. API-ul de catalog permite inspectarea și modificarea parteneriatelor/echivalărilor prin servicii. Testele MockMvc verifică fluxurile de creare, modificare, dezactivare și regulile lor prin API; nu există teste izolate dedicate metodelor repository JPA. |
+
+## Alegeri de implementare
+
+- Datele demo și validările pun accent pe reguli ușor de urmărit: un curriculum are 30 ECTS; echivalarea este 1:1; cursurile trebuie să aparțină programului și perioadei potrivite; un curs nu poate fi reutilizat în același parteneriat.
+- HTTP JSON, DTO-uri, `POST`, `PUT`, `PATCH` și HTTPS local fac demonstrația utilizabilă din browser și Postman. PDF-urile de Sprint 2 și 3 nu le enumără ca livrabile explicite; sunt interfața aleasă pentru demonstrație, nu cerințe de conformitate ale sprinturilor.
+- Profilul H2 în memorie este implicit pentru pornire simplă. Profilul `persistent` este opțional, pentru a păstra modificările locale.
+- Modelul nu cuprinde elev/student, contract individual Learning Agreement, nominalizare, aprobare, audit complet sau integrare între servicii. Aceste domenii apar în documentația platformei mai mari, dar sunt în afara acestei demonstrații de recomandări.
+- Implementarea folosește servicii și repository-uri Spring Data; nu reproduce clase factory/repository generice cu `EntityManager`, infrastructură de evenimente sau arhitectură de microservicii. În Sprint 3, repository-ul CRUD JPA scris manual este marcat explicit drept bonus.

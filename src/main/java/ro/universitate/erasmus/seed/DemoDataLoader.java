@@ -89,18 +89,56 @@ public class DemoDataLoader implements ApplicationRunner {
                     addAgreement(programs[home][program], programs[5][program], term, true,
                                  origin, curricula[5][program][semester], new int[]{0, 1});
             }
+
+        // Keep the original year-two records first so their IDs and published examples remain stable.
+        // Add one later curriculum to make the demo useful beyond a single student profile.
+        Course[][] yearThree = new Course[places.length][];
+        for (int u : new int[]{0, 2, 3, 4, 5}) {
+            String[] names = yearThreeNames(u >= 2);
+            yearThree[u] = new Course[names.length];
+            for (int i = 0; i < names.length; i++) {
+                String description = "Studiază " + names[i].toLowerCase(Locale.ROOT)
+                    + " prin laboratoare și un proiect de semestru.";
+                yearThree[u][i] = save(new Course(programs[u][0], "INF3-" + (i + 1), names[i], description,
+                    credits(0)[i], 3, "2027-2028", Semester.FIRST));
+            }
+        }
+        addAgreement(programs[0][0], programs[2][0], Semester.FIRST, true,
+            yearThree[0], yearThree[2], all(6));
+        addAgreement(programs[0][0], programs[3][0], Semester.FIRST, true,
+            yearThree[0], yearThree[3], new int[]{0, 1, 2, 4});
+        addAgreement(programs[0][0], programs[4][0], Semester.FIRST, true,
+            yearThree[0], yearThree[4], new int[]{});
+        addAgreement(programs[0][0], programs[5][0], Semester.FIRST, false,
+            yearThree[0], yearThree[5], all(6));
     }
 
     private void addAgreement(StudyProgram home, StudyProgram host, Semester semester, boolean active,
                               Course[] homeCourses, Course[] hostCourses, int[] indices) {
-        ExchangeAgreement agreement = save(new ExchangeAgreement(home, host, YEAR, semester, active));
+        String academicYear = homeCourses[0].academicYear;
+        ExchangeAgreement agreement = save(new ExchangeAgreement(home, host, academicYear, semester, active));
         for (int index : indices) {
             Course origin = homeCourses[index], destination = hostCourses[index];
             String reason = "Ambele discipline evaluează " +
-                topic(origin.code.startsWith("INF"), semester, index) +
+                topic(origin, semester, index) +
                 " prin aplicații comparabile de " + origin.ects + " ECTS.";
             save(new CourseEquivalence(agreement, origin, destination, reason));
         }
+    }
+
+    private static String topic(Course course, Semester semester, int index) {
+        if (course.studyYear == 3) {
+            String[] topics = {
+                "serviciile distribuite și comunicarea între componente",
+                "organizarea și analiza volumelor mari de date",
+                "identificarea și reducerea riscurilor de securitate",
+                "antrenarea și evaluarea modelelor de învățare automată",
+                "planificarea etapelor și livrabilelor unui proiect software",
+                "responsabilitatea și conformitatea în dezvoltarea tehnologiei"
+            };
+            return topics[index];
+        }
+        return topic(course.code.startsWith("INF"), semester, index);
     }
 
     private static String topic(boolean informatics, Semester semester, int index) {
@@ -131,6 +169,13 @@ public class DemoDataLoader implements ApplicationRunner {
     }
     private static int[] credits(int program) {
         return program == 0 ? new int[]{7, 6, 6, 5, 3, 3} : new int[]{7, 6, 5, 4, 4, 4};
+    }
+    private static String[] yearThreeNames(boolean host) {
+        return host
+            ? new String[]{"Arhitectura sistemelor distribuite", "Ingineria datelor", "Securitatea aplicațiilor",
+                           "Inteligența artificială", "Managementul proiectelor software", "Etica tehnologiei"}
+            : new String[]{"Sisteme distribuite", "Depozite de date", "Securitate aplicată",
+                           "Învățare automată", "Ingineria proiectelor software", "Etică și legislație IT"};
     }
     private static String[] names(int program, int semester, boolean host) {
         if (program == 0 && semester == 0) return host
